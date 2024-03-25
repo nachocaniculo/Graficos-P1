@@ -109,6 +109,12 @@ void main()
 <body>
 <canvas id="myCanvas" width="500" height="500"></canvas>
 <script type="text/javascript">
+    function updateCameraView() {
+        var view = mat4.create();
+        mat4.lookAt(view, cameraPosition, cameraTarget, cameraUp);
+        shaderProgramL.setUniformMat4("view", view);
+    }
+    
     var gl = createContext( "myCanvas" );
 
     var VAO, VBO, VBO2, VBO3, EBO;
@@ -166,6 +172,8 @@ void main()
     shaderProgramL.link( );
     shaderProgramL.autocatching( );
 
+    var view = mat4.create();
+    mat4.translate( view, view, [ 0.0, 0.0, -20.0 ] );
 
     function renderFunc( time )
     {
@@ -178,14 +186,12 @@ void main()
 
         var proj = mat4.create( );
         mat4.perspective(proj, Math.radians( 60.0 ), 500/500 /*width/height*/, 0.001, 1000.0 );
-        var view = mat4.create( );
-        mat4.translate( view, view, [ 0.0, 0.0, -20.0 ] );
         time *= 0.001; // to seconds
         var angle = time * 25.0;
         var model = mat4.create( );
         mat4.translate( model, model, [ 0.0, 0.0, 0.0 ] );
-        mat4.rotate( model, model, Math.radians( angle ), [ 1.0, 0.5, 0.0 ] );
-
+        let cameraPos = [0.0, 0.0, 3.0];
+        
         shaderProgram.bind( );
 
         shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
@@ -194,7 +200,7 @@ void main()
         shaderProgram.setUniformMat4( "model", model );
         gl.bindVertexArray( VAO );
         gl.drawElements( gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0 );
-
+        
         shaderProgramL.bind();
 
         var modelLight = mat4.create( );
@@ -204,12 +210,30 @@ void main()
         shaderProgramL.setUniformMat4( "view", view );
         shaderProgramL.setUniformMat4( "model", modelLight );
         gl.drawElements( gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0 );
-
+        
         gl.bindVertexArray( null );
 
 
         requestAnimationFrame( renderFunc );
     }
+    // Variables para controlar la posición y orientación de la cámara
+    var cameraPosition = [0.0, 0.0, 20.0];
+    var cameraTarget = [0.0, 0.0, 0.0];
+    var cameraUp = [0.0, 1.0, 0.0];
+    var rotacionX = 0;
+    var rotacionY = 0;
+    
+    // Función para actualizar la vista de la cámara
+    function updateCameraView() {
+        var target = vec3.create();
+        target[0] = Math.cos(Math.radians(rotacionX));
+        target[1] = Math.sin(Math.radians(rotacionY));
+        target[2] = Math.sin(Math.radians(rotacionX));
+        vec3.normalize(cameraTarget,target);
+        mat4.lookAt(view, cameraPosition, vec3.add(vec3.create(), cameraPosition, cameraTarget), cameraUp);
+        shaderProgramL.setUniformMat4("view", view);
+    }
+
     document.addEventListener('keydown', function(event) {
         /*
             65 => A
@@ -225,11 +249,59 @@ void main()
             40 => Fecha abajo
 
         */
-        if( event.keyCode == 65 ) // A
-        {
-        }
-    } );
+        var speed = 0.1; // Velocidad de movimiento de la cámara
+        var speedRotation = 2.5;
 
+        switch(event.keyCode) {
+            case 83: // S abajo
+                cameraPosition[1] -= speed; // Mover hacia abajo
+                break;
+
+            case 87: // W arriba
+                cameraPosition[1] += speed; // Mover hacia arriba
+                break;
+
+            case 65: // A izquierda
+                var left = vec3.create();
+                vec3.cross(left, cameraTarget, cameraUp);
+                vec3.normalize(left, left);
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, left, -speed);
+                vec3.scaleAndAdd(cameraTarget, cameraTarget, left, -speed);
+                break;
+
+            case 68: // D derecha
+                var right = vec3.create();
+                vec3.cross(right, cameraTarget, cameraUp);
+                vec3.normalize(right, right);
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, right, speed);
+                vec3.scaleAndAdd(cameraTarget, cameraTarget, right, speed);
+                break;
+
+            case 81: // Q
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, -speed); // zoom out
+                break;
+            case 69: // E
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, speed); // zoom in
+                break;
+        
+            case 38: // flecha arriba rotacion arriba
+                rotacionY +=speedRotation;
+                break;
+
+            case 40: // flecha abajo rotacion abajo
+                rotacionY -=speedRotation;
+                break;
+
+            case 37: //flecha izquierda rotar izquierda
+                rotacionX -= speedRotation;
+                break;
+            case 39: //flecha derecha rotar derecha
+                rotacionX += speedRotation;
+                break;
+        }
+        updateCameraView();
+    } );
+    
     renderFunc( 0.0 );
 </script>
 </body>
