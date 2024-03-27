@@ -55,6 +55,8 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 out vec3 Normal;
+//Variable de salida que contendrá las coordenadas donde se aplique la textura
+out vec2 TexCoord;
 
 out vec3 fragPos; 
 
@@ -69,6 +71,7 @@ void main()
  Normal = normalM * aNormal;
 
  fragPos = vec3(model * vec4(aPos, 1.0)); // (model * vec4(aPos, 1.0)).xyz;
+ TexCoord = aTexCoord; // Asigna las coordenadas de textura a la salida
 }
 
 
@@ -80,6 +83,10 @@ precision mediump float;
 out vec4 FragColor;
 in vec3 Normal;
 in vec3 fragPos; 
+
+//variables relacionadas con la textura
+uniform sampler2D diffuseTexture;
+in vec2 TexCoord;
 
 uniform vec3 lightPos;
 
@@ -102,6 +109,10 @@ void main()
 
  vec3 result = (ambient + diffuse) * objectColor;
  FragColor = vec4(diffuse, 1.0);
+
+ //texture
+ vec3 color = texture(diffuseTexture, TexCoord).rgb; // Lee el color de la textura en las coordenadas dadas
+ FragColor = vec4(color, 1.0);
 }
 </script>
 
@@ -109,11 +120,6 @@ void main()
 <body>
 <canvas id="myCanvas" width="500" height="500"></canvas>
 <script type="text/javascript">
-    function updateCameraView() {
-        var view = mat4.create();
-        mat4.lookAt(view, cameraPosition, cameraTarget, cameraUp);
-        shaderProgramL.setUniformMat4("view", view);
-    }
     
     var gl = createContext( "myCanvas" );
 
@@ -175,6 +181,22 @@ void main()
     var view = mat4.create();
     mat4.translate( view, view, [ 0.0, 0.0, -20.0 ] );
 
+
+    // Carga de la textura
+    var myTexture = new Image( );
+    var textureID = gl.createTexture( );
+    myTexture.onload = function( ) {
+        gl.bindTexture(gl.TEXTURE_2D, textureID);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+        gl.RGBA, gl.UNSIGNED_BYTE, myTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }; 
+    //Dirección de la textura
+    myTexture.src = "texture.png";
+
     function renderFunc( time )
     {
         gl.viewport( 0, 0, 500, 500 );
@@ -191,7 +213,13 @@ void main()
         var model = mat4.create( );
         mat4.translate( model, model, [ 0.0, 0.0, 0.0 ] );
         let cameraPos = [0.0, 0.0, 3.0];
-        
+
+        // Se establece y se activa la textura
+        shaderProgram.bind( );
+        gl.activeTexture(gl.TEXTURE0);
+        shaderProgram.setUniform1i("diffuseTexture", 0);
+        gl.bindTexture(gl.TEXTURE_2D, textureID);
+
         shaderProgram.bind( );
 
         shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
@@ -200,7 +228,8 @@ void main()
         shaderProgram.setUniformMat4( "model", model );
         gl.bindVertexArray( VAO );
         gl.drawElements( gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0 );
-        
+
+
         shaderProgramL.bind();
 
         var modelLight = mat4.create( );
