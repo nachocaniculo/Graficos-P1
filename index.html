@@ -91,7 +91,15 @@
         uniform sampler2D diffuseTexture;
         in vec2 TexCoord;
 
-        uniform vec3 lightPos;
+        // Estructura para la luz direccional
+        struct Light {
+            vec3 direction;
+            vec3 ambient;
+            vec3 diffuse;
+            vec3 specular;
+        };
+    
+        uniform Light light; // Uniforme para la luz direccional
 
         void main()
         {
@@ -105,7 +113,7 @@
 
             // diffuse
             vec3 norm = normalize(Normal);
-            vec3 lightDir = normalize(lightPos - fragPos);
+            vec3 lightDir = normalize(-light.direction); // Dirección de la luz direccional
             float diff = max(dot(norm, lightDir), 0.0);
             vec3 diffuse = diff * lightColor;
 
@@ -120,8 +128,9 @@
             FragColor = vec4(diffuse, 1.0);
 
             //texture
-            vec3 color = texture(diffuseTexture, TexCoord).rgb; // Lee el color de la textura en las coordenadas dadas
-            FragColor = vec4(color, 1.0);
+            //vec3 color = texture(diffuseTexture, TexCoord).rgb; // Lee el color de la textura en las coordenadas dadas
+            //FragColor = vec4(color, 1.0);
+
         }
     </script>
 </head>
@@ -227,6 +236,13 @@
         index = gl.getUniformBlockIndex(shaderProgramL.mCompiledShader, "UBO");
         gl.uniformBlockBinding(shaderProgramL.mCompiledShader, index, 0);
 
+        var light = {
+            direction: [0.0, 0.0, -1.0], // Dirección de la luz
+            ambient: [0.1, 0.1, 0.1],
+            diffuse: [0.5, 0.5, 0.5],
+            specular: [1.0, 1.0, 1.0]
+        }; // Datos de la luz
+
         function renderFunc(time) {
             gl.viewport(0, 0, 500, 500);
             gl.clearColor(0.5, 0.5, 0.0, 1.0);
@@ -247,6 +263,11 @@
             shaderProgram.setUniform1i("diffuseTexture", 0);
             gl.bindTexture(gl.TEXTURE_2D, textureID);
 
+            // asa los datos de la luz al shader
+            shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
+            shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
+            shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+            shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
 
             shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
 
@@ -281,7 +302,7 @@
             requestAnimationFrame(renderFunc);
         }
 
-         // Variables para controlar la posición y orientación de la cámara
+        // Variables para controlar la posición y orientación de la cámara
         var cameraPosition = [0.0, 0.0, 20.0];
         var cameraTarget = [0.0, 0.0, 0.0];
         var cameraUp = [0.0, 1.0, 0.0];
@@ -298,75 +319,76 @@
             mat4.lookAt(view, cameraPosition, vec3.add(vec3.create(), cameraPosition, cameraTarget), cameraUp);
             shaderProgramL.setUniformMat4("view", view);
         }
+
         document.addEventListener('keydown', function(event) {
-        /*
-            65 => A
-            68 => D
-            83 => S
-            87 => W
-            81 => Q
-            69 => E
+            /*
+                65 => A
+                68 => D
+                83 => S
+                87 => W
+                81 => Q
+                69 => E
 
-            37 => Flecha izq
-            39 => Fecha drcha
-            38 => Fecha arriba
-            40 => Fecha abajo
+                37 => Flecha izq
+                39 => Fecha drcha
+                38 => Fecha arriba
+                40 => Fecha abajo
 
-        */
-        var speed = 0.1; // Velocidad de movimiento de la cámara
-        var speedRotation = 2.5;
+            */
+            var speed = 0.1; // Velocidad de movimiento de la cámara
+            var speedRotation = 2.5;
 
-        switch(event.keyCode) {
-            case 83: // S abajo
-                cameraPosition[1] -= speed; // Mover hacia abajo
-                break;
+            switch(event.keyCode) {
+                case 83: // S abajo
+                    cameraPosition[1] -= speed; // Mover hacia abajo
+                    break;
 
-            case 87: // W arriba
-                cameraPosition[1] += speed; // Mover hacia arriba
-                break;
+                case 87: // W arriba
+                    cameraPosition[1] += speed; // Mover hacia arriba
+                    break;
 
-            case 65: // A izquierda
-                var left = vec3.create();
-                vec3.cross(left, cameraTarget, cameraUp);
-                vec3.normalize(left, left);
-                vec3.scaleAndAdd(cameraPosition, cameraPosition, left, -speed);
-                vec3.scaleAndAdd(cameraTarget, cameraTarget, left, -speed);
-                break;
+                case 65: // A izquierda
+                    var left = vec3.create();
+                    vec3.cross(left, cameraTarget, cameraUp);
+                    vec3.normalize(left, left);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, left, -speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, left, -speed);
+                    break;
 
-            case 68: // D derecha
-                var right = vec3.create();
-                vec3.cross(right, cameraTarget, cameraUp);
-                vec3.normalize(right, right);
-                vec3.scaleAndAdd(cameraPosition, cameraPosition, right, speed);
-                vec3.scaleAndAdd(cameraTarget, cameraTarget, right, speed);
-                break;
+                case 68: // D derecha
+                    var right = vec3.create();
+                    vec3.cross(right, cameraTarget, cameraUp);
+                    vec3.normalize(right, right);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, right, speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, right, speed);
+                    break;
 
-            case 81: // Q
-                vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, -speed); // zoom out
-                break;
-            case 69: // E
-                vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, speed); // zoom in
-                break;
+                case 81: // Q
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, -speed); // zoom out
+                    break;
+                case 69: // E
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, cameraTarget, speed); // zoom in
+                    break;
+            
+                case 38: // flecha arriba rotacion arriba
+                    rotacionY +=speedRotation;
+                    break;
+
+                case 40: // flecha abajo rotacion abajo
+                    rotacionY -=speedRotation;
+                    break;
+
+                case 37: //flecha izquierda rotar izquierda
+                    rotacionX -= speedRotation;
+                    break;
+                case 39: //flecha derecha rotar derecha
+                    rotacionX += speedRotation;
+                    break;
+            }
+            updateCameraView();
+        } );
         
-            case 38: // flecha arriba rotacion arriba
-                rotacionY +=speedRotation;
-                break;
-
-            case 40: // flecha abajo rotacion abajo
-                rotacionY -=speedRotation;
-                break;
-
-            case 37: //flecha izquierda rotar izquierda
-                rotacionX -= speedRotation;
-                break;
-            case 39: //flecha derecha rotar derecha
-                rotacionX += speedRotation;
-                break;
-        }
-        updateCameraView();
-    } );
-    
-    renderFunc( 0.0 );
+        renderFunc( 0.0 );
     </script>
 </body>
 </html>
