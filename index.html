@@ -246,7 +246,7 @@
         gl.uniformBlockBinding(shaderProgramL.mCompiledShader, index, 0);
 
         var light = {
-            direction: [-10.0, 0.0, 0.0], // Dirección de la luz
+            direction: [10.0, 0.0, 0.0], // Dirección de la luz
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.5, 0.5, 0.5],
             specular: [1.0, 1.0, 1.0]
@@ -312,7 +312,8 @@
             shaderProgramL.bind();
 
             var modelLight = mat4.create();
-            mat4.translate(modelLight, modelLight, [10.0, 0.0, 1.0]);
+            mat4.translate(modelLight, modelLight, light.direction); //si ponemos las coordenadas que estaban (10.0, 0.0, 1.0) 
+                                                                     // no se mueve el cubito al pulsar las teclas pero se pone la luz al contrario ?
             mat4.scale(modelLight, modelLight, [0.25, 0.25, 0.25]);
 
             shaderProgramL.setUniformMat4("model", modelLight);
@@ -349,6 +350,26 @@
             shaderProgramL.setUniformMat4("view", view);
         }
 
+        /*function updateLightSettings(adjustment){
+            // Ajusta la propiedad especificada por un valor
+            shaderProgram.bind();
+            console.log(light.ambient);
+
+            for (let i = 0; i < 3; i++) {
+                light.ambient[i] = Math.max(0.0, Math.min(light.ambient[i] + adjustment, 1.0));
+                light.diffuse[i] = Math.max(0.0, Math.min(light.diffuse[i] + adjustment, 1.0));
+                light.specular[i] = Math.max(0.0, Math.min(light.specular[i] + adjustment, 1.0));
+            }
+
+            // Actualiza los uniformes de luz en el programa de sombreado activo
+            console.log(light.ambient);
+            shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
+            shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+            shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
+            
+            
+        }*/
+
         document.addEventListener('keydown', function(event) {
             /*
                 65 => A
@@ -357,10 +378,14 @@
                 87 => W
                 81 => Q
                 69 => E
+
                 73 => I
                 75 => K
                 76 => L
                 74 => J
+
+                85 => U
+                79 => O
 
                 37 => Flecha izq
                 39 => Fecha drcha
@@ -429,8 +454,20 @@
                 case 73: //Configurar la posicion de la luz hacia derecha
                     light.direction[0] += speed;
                     break;
+
+                /*case 85:
+                    console.log(light.ambient);
+                    updateLightSettings( 0.1);
+
+                    break;
+                case 79:
+                    updateLightSettings(-0.1);
+                    break;*/
+                
+
             }
             updateCameraView();
+            
         } );
         
         renderFunc( 0.0 );
