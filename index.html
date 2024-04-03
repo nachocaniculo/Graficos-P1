@@ -100,24 +100,28 @@
         };
     
         uniform Light light; // Uniforme para la luz direccional
+        uniform Light orbitalLight; // Variable de la luz dinamica
 
         void main()
         {
             vec3 lightColor = vec3(0.0, 1.0, 0.0);
-            vec3 objectColor = vec3(1.0, 0.0, 1.0);
+            vec3 lightColorOrbital = vec3(0.0, 0.0, 1.0); 
+            vec3 objectColor = vec3(1.0, 1.0, 1.0);
             vec3 viewPos = vec3(0.0, 0.0, 20.0);
 
             // ambient
             float ambientStrength = 0.1;
-            vec3 ambient = ambientStrength * lightColor;
+            vec3 ambient = ambientStrength * (lightColor + lightColorOrbital);
             
             
 
             // diffuse
             vec3 norm = normalize(Normal);
             vec3 lightDir = normalize(-light.direction); // Dirección de la luz direccional
+            vec3 lightDirOrbital = normalize(orbitalLight.direction); // Dirección de la luz direccional orbital
             float diff = max(dot(norm, lightDir), 0.0);
-            vec3 diffuse = diff * lightColor;
+            float diffOrbital = max(dot(norm, lightDirOrbital), 0.0); //diff de la luz orbital
+            vec3 diffuse = (diff + diffOrbital) * (lightColor + lightColorOrbital); // se suman los diff y el color de las luces y ya se multiplican
 
             
 
@@ -126,15 +130,16 @@
             vec3 viewDir = normalize(viewPos - fragPos);
             vec3 reflectDir = reflect(-lightDir, norm);
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-            vec3 specular = specularStrength * spec * lightColor; 
+            vec3 reflectDirOrbital = reflect(-lightDirOrbital, norm);
+            float specOrbital = pow(max(dot(viewDir, reflectDirOrbital), 0.0), 32.0);
+            vec3 specular = specularStrength * spec * specOrbital * (lightColor + lightColorOrbital); //se suman los spec de cada luz y tambien sus colores
 
-            vec3 result = (ambient + diffuse + specular) * objectColor;
-            FragColor = vec4(diffuse, 1.0);
+            vec3 result = (ambient + diffuse + specular) *objectColor;
 
             // Texture
             vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
-            vec3 finalColor = diff * texColor; // con diff * texColor lo pone textura normal y oscuricido, con diffuse lo pone verde y oscurecido, siendo no verde la textura 
-            FragColor = vec4(finalColor, 1.0);
+            //vec3 finalColor = diffuse * texColor; // con diff * texColor lo pone textura normal y oscuricido, con diffuse lo pone verde y oscurecido, siendo no verde la textura 
+            FragColor = vec4(texColor, 1.0) * vec4(result,1.0); //se multiplican el color de la textura por el resultado de las luces
         }
     </script>
 </head>
@@ -241,7 +246,7 @@
         gl.uniformBlockBinding(shaderProgramL.mCompiledShader, index, 0);
 
         var light = {
-            direction: [0.0, 0.0, -1.0], // Dirección de la luz
+            direction: [-10.0, 0.0, 0.0], // Dirección de la luz
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.5, 0.5, 0.5],
             specular: [1.0, 1.0, 1.0]
@@ -267,13 +272,25 @@
             shaderProgram.setUniform1i("diffuseTexture", 0);
             gl.bindTexture(gl.TEXTURE_2D, textureID);
 
-            // asa los datos de la luz al shader
+            //calculo de la dirección de la luz dinamica
+            var lightRadius = 5;
+            var lightX = Math.cos(time) * lightRadius;
+            var lightY = Math.sin(time) * lightRadius;
+            
+            // Pasa los datos de la luz dinamica al shader
+            shaderProgram.setUniform3f("orbitalLight.direction",lightX, lightY, -1);
+            // shaderProgram.setUniform3f("orbitalLight.ambient", orbitalLight.ambient[0], orbitalLight.ambient[1], orbitalLight.ambient[2]);
+            // shaderProgram.setUniform3f("orbitalLight.diffuse", orbitalLight.diffuse[0], orbitalLight.diffuse[1], orbitalLight.diffuse[2]);
+            // shaderProgram.setUniform3f("orbitalLight.specular", orbitalLight.specular[0], orbitalLight.specular[1], orbitalLight.specular[2]);
+
+
+            // Pasa los datos de la luz al shader
             shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
             shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
             shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
 
-            shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
+            //shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
 
             gl.bufferSubData(
                 gl.UNIFORM_BUFFER,
@@ -301,6 +318,14 @@
             shaderProgramL.setUniformMat4("model", modelLight);
             gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);
 
+            //Modelado de la luz orbital
+            var modelLight = mat4.create();
+            mat4.translate(modelLight, modelLight, [lightX,lightY, 0.0]);
+            mat4.scale(modelLight, modelLight, [0.25, 0.25, 0.25]);
+
+            shaderProgramL.setUniformMat4("model", modelLight);
+            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);
+
             gl.bindVertexArray(null);
 
             requestAnimationFrame(renderFunc);
@@ -312,11 +337,11 @@
         var cameraUp = [0.0, 1.0, 0.0];
         var rotacionX = 0;
         var rotacionY = 0;
-    
+        
          // Función para actualizar la vista de la cámara
         function updateCameraView() {
             var target = vec3.create();
-            target[0] = Math.cos(Math.radians(rotacionX));
+            target[0] = Math.cos(Math.radians(rotacionX));   
             target[1] = Math.sin(Math.radians(rotacionY));
             target[2] = Math.sin(Math.radians(rotacionX));
             vec3.normalize(cameraTarget,target);
@@ -339,9 +364,9 @@
                 40 => Fecha abajo
 
             */
-            var speed = 0.1; // Velocidad de movimiento de la cámara
-            var speedRotation = 2.5;
 
+            var speed = 0.1; // Velocidad de movimiento de la cámara
+            var speedRotation = 3;
             switch(event.keyCode) {
                 case 83: // S abajo
                     cameraPosition[1] -= speed; // Mover hacia abajo
@@ -383,10 +408,10 @@
                     break;
 
                 case 37: //flecha izquierda rotar izquierda
-                    rotacionX -= speedRotation;
+                    rotacionX -= speedRotation;                             
                     break;
                 case 39: //flecha derecha rotar derecha
-                    rotacionX += speedRotation;
+                    rotacionX += speedRotation;             
                     break;
             }
             updateCameraView();
