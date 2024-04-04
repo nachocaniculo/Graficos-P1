@@ -401,27 +401,27 @@
             var speedRotation = 3;
             switch(event.keyCode) {
                 case 83: // S abajo
-                    cameraPosition[1] -= speed; // Mover hacia abajo
+                    cameraPosition[1] += speed; // Mover hacia abajo
                     break;
 
                 case 87: // W arriba
-                    cameraPosition[1] += speed; // Mover hacia arriba
+                    cameraPosition[1] -= speed; // Mover hacia arriba
                     break;
 
                 case 65: // A izquierda
                     var left = vec3.create();
                     vec3.cross(left, cameraTarget, cameraUp);
                     vec3.normalize(left, left);
-                    vec3.scaleAndAdd(cameraPosition, cameraPosition, left, -speed);
-                    vec3.scaleAndAdd(cameraTarget, cameraTarget, left, -speed);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, left, speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, left, speed);
                     break;
 
                 case 68: // D derecha
                     var right = vec3.create();
                     vec3.cross(right, cameraTarget, cameraUp);
                     vec3.normalize(right, right);
-                    vec3.scaleAndAdd(cameraPosition, cameraPosition, right, speed);
-                    vec3.scaleAndAdd(cameraTarget, cameraTarget, right, speed);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, right, -speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, right, -speed);
                     break;
 
                 case 81: // Q
@@ -432,30 +432,30 @@
                     break;
             
                 case 38: // flecha arriba rotacion arriba
-                    rotacionY +=speedRotation;
-                    break;
-
-                case 40: // flecha abajo rotacion abajo
                     rotacionY -=speedRotation;
                     break;
 
+                case 40: // flecha abajo rotacion abajo
+                    rotacionY +=speedRotation;
+                    break;
+
                 case 37: //flecha izquierda rotar izquierda
-                    rotacionX -= speedRotation;                             
+                    rotacionX += speedRotation;                             
                     break;
                 case 39: //flecha derecha rotar derecha
-                    rotacionX += speedRotation;             
+                    rotacionX -= speedRotation;             
                     break;
-                case 76: //Configurar la posicion de la luz hacia arriba 
+                case 73:  // I luz direccional arriba
                     light.direction[1] += speed;
                     break;
-                case 75: //Configurar la posicion de la luz hacia abajo
+                case 75: // K luz direccional abajo
                     light.direction[1] -= speed;
                     break;
-                case 74: //Configurar la posicion de la luz hacia izquierda
-                    light.direction[0] -= speed;
-                    break;
-                case 73: //Configurar la posicion de la luz hacia derecha
+                case 76: // L luz direccional derecha
                     light.direction[0] += speed;
+                    break;
+                case 74: // J luz direccional izquierda
+                    light.direction[0] -= speed;
                     break;
 
                 /*case 85:
