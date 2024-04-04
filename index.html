@@ -21,6 +21,7 @@
         };
 
         const LIGHT_INTENSITY_ADJUSTMENT = 0.1;
+        const flashlightCutOffAngle = 12.5; // Ángulo de corte de la linterna en grados
         var textureURL = "texture.png";
     </script>
     <script id="shader-vs-light" type="x-shader/x-vertex">#version 300 es
@@ -281,7 +282,6 @@
             quadratic:0.032
         }; // Datos de la luz
 
-        const flashlightCutOffAngle = 12.5; // Ángulo de corte de la linterna en grados
         var flashlight = {
             position: cameraPosition,
             direction: cameraTarget,
