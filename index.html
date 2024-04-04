@@ -289,16 +289,17 @@
         };
 
         function renderCubes(time) {
-            for (let i = 0; i < cubePositions.length; i++) {
-                let position = cubePositions[i];
-                let color = cubeColors[i];
+            for (var i = 0; i < cubePositions.length; i++) {
+                var position = cubePositions[i];
+                var color = cubeColors[i];
+
 
                 // Crea la matriz de modelo para el cubo
-                let model = mat4.create();
+                var model = mat4.create();
                 mat4.scale(model, model, [0.75, 0.75, 0.75]);
                 mat4.translate(model, model, position);
-                let angle = 20 * i * time;  // Ajusta el ángulo según sea necesario
-                model = mat4.rotate(model, model, Math.radians(angle), [1.0, 0.3, 0.5]);
+                var angle = 20 * (i+1) * time;  // Ajusta el ángulo según sea necesario
+                mat4.rotate(model, model, Math.radians(angle), [1.0, 0.3, 0.0]);
 
                 // Establece la matriz de modelo y el color para el shader del cubo
                 shaderProgram.bind();
@@ -351,7 +352,7 @@
             // shaderProgram.setUniform3f("orbitalLight.diffuse", orbitalLight.diffuse[0], orbitalLight.diffuse[1], orbitalLight.diffuse[2]);
             // shaderProgram.setUniform3f("orbitalLight.specular", orbitalLight.specular[0], orbitalLight.specular[1], orbitalLight.specular[2]);
 
-            console.log(light.ambient);
+            
             // Pasa los datos de la luz al shader
             shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
