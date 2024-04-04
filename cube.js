@@ -1,7 +1,7 @@
 var cubeNVertex = 24;
 var cubeNTriangleIndex = 12;
 
-var cubePositions = [
+const cubePositions = [
     [0.0, 0.0, 0.0],
     [4.0, 10.0, -30.0],
     [-3.0, -4.4, -5.0],
