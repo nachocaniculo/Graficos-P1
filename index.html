@@ -94,9 +94,15 @@
         // Estructura para la luz direccional
         struct Light {
             vec3 direction;
+
             vec3 ambient;
             vec3 diffuse;
             vec3 specular;
+
+            //atenuación 
+            float constant;
+            float linear;
+            float quadratic;
         };
     
         uniform Light light; // Uniforme para la luz direccional
@@ -113,7 +119,7 @@
 
             // ambient
             float ambientStrength = 0.1;
-            vec3 ambient = ambientStrength * (lightColor + lightColorOrbital + lightColorCamera);
+            vec3 ambient = ambientStrength * (lightColor + lightColorOrbital + lightColorCamera) ;
             
             
 
@@ -137,7 +143,11 @@
             float specOrbital = pow(max(dot(viewDir, reflectDirOrbital), 0.0), 32.0);
             vec3 specular = specularStrength * spec * specOrbital * (lightColor + lightColorOrbital); //se suman los spec de cada luz y tambien sus colores
 
-            vec3 result = (ambient + diffuse + specular) *objectColor;
+            //attenuation
+            float distance    = length(light.direction - fragPos);
+            float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance)); 
+
+            vec3 result = (ambient + diffuse + specular) * objectColor * attenuation;
 
             // Texture
             vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
@@ -252,7 +262,11 @@
             direction: [10.0, 0.0, 0.0], // Dirección de la luz
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.5, 0.5, 0.5],
-            specular: [1.0, 1.0, 1.0]
+            specular: [1.0, 1.0, 1.0], 
+
+            constant:1.0, 
+            linear:0.09,
+            quadratic:0.032
         }; // Datos de la luz
 
         function renderFunc(time) {
@@ -267,7 +281,7 @@
             var angle = time * 25.0;
             var model = mat4.create();
             mat4.translate(model, model, [0.0, 0.0, 0.0]);
-            mat4.rotate(model, model, Math.radians(angle), [1.0, 0.5, 0.0]);
+            //mat4.rotate(model, model, Math.radians(angle), [1.0, 0.5, 0.0]);
 
             // Se establece y se activa la textura
             shaderProgram.bind( );
@@ -279,6 +293,8 @@
             var lightRadius = 5;
             var lightX = Math.cos(time) * lightRadius;
             var lightY = Math.sin(time) * lightRadius;
+
+
             
             // Pasa los datos de la luz dinamica al shader
             shaderProgram.setUniform3f("orbitalLight.direction",lightX, lightY, -1);
@@ -286,12 +302,17 @@
             // shaderProgram.setUniform3f("orbitalLight.diffuse", orbitalLight.diffuse[0], orbitalLight.diffuse[1], orbitalLight.diffuse[2]);
             // shaderProgram.setUniform3f("orbitalLight.specular", orbitalLight.specular[0], orbitalLight.specular[1], orbitalLight.specular[2]);
 
-
+            console.log(light.ambient);
             // Pasa los datos de la luz al shader
             shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
             shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
             shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
+
+            shaderProgram.setUniform1f("light.constant", 1.0);
+            shaderProgram.setUniform1f("light.linear", 0.09);
+            shaderProgram.setUniform1f("light.quadratic", 0.032);
+
 
             //shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
 
@@ -315,8 +336,7 @@
             shaderProgramL.bind();
 
             var modelLight = mat4.create();
-            mat4.translate(modelLight, modelLight, light.direction); //si ponemos las coordenadas que estaban (10.0, 0.0, 1.0) 
-                                                                     // no se mueve el cubito al pulsar las teclas pero se pone la luz al contrario ?
+            mat4.translate(modelLight, modelLight, light.direction); 
             mat4.scale(modelLight, modelLight, [0.25, 0.25, 0.25]);
 
             shaderProgramL.setUniformMat4("model", modelLight);
@@ -353,9 +373,9 @@
             shaderProgramL.setUniformMat4("view", view);
         }
 
-        /*function updateLightSettings(adjustment){
+        function updateLightSettings(adjustment){
             // Ajusta la propiedad especificada por un valor
-            shaderProgram.bind();
+            
             console.log(light.ambient);
 
             for (let i = 0; i < 3; i++) {
@@ -365,13 +385,14 @@
             }
 
             // Actualiza los uniformes de luz en el programa de sombreado activo
+            shaderProgram.bind();
             console.log(light.ambient);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
             shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
             shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
             
             
-        }*/
+        }
 
         document.addEventListener('keydown', function(event) {
             /*
@@ -386,7 +407,6 @@
                 75 => K
                 76 => L
                 74 => J
-
                 85 => U
                 79 => O
 
@@ -398,6 +418,7 @@
             */
 
             var speed = 0.1; // Velocidad de movimiento de la cámara
+            var adjustment = 0.1; 
             var speedRotation = 3;
             switch(event.keyCode) {
                 case 83: // S abajo
@@ -434,17 +455,16 @@
                 case 38: // flecha arriba rotacion arriba
                     rotacionY -=speedRotation;
                     break;
-
                 case 40: // flecha abajo rotacion abajo
                     rotacionY +=speedRotation;
                     break;
-
                 case 37: //flecha izquierda rotar izquierda
                     rotacionX += speedRotation;                             
                     break;
                 case 39: //flecha derecha rotar derecha
                     rotacionX -= speedRotation;             
                     break;
+
                 case 73:  // I luz direccional arriba
                     light.direction[1] += speed;
                     break;
@@ -458,19 +478,26 @@
                     light.direction[0] -= speed;
                     break;
 
-                /*case 85:
+                case 85: // U luz direccional adelante
+                    light.direction[2] += speed;
+                    break;
+                case 79: // O luz direccional atras
+                    light.direction[2] -= speed;
+                    break;
+
+                
+                case 55: //7 mas intensidad
                     console.log(light.ambient);
-                    updateLightSettings( 0.1);
+                    updateLightSettings(speed);
 
                     break;
-                case 79:
-                    updateLightSettings(-0.1);
-                    break;*/
-                
-
+                case 56: //7 menos intensidad
+                    console.log(light.ambient);
+                    updateLightSettings(-speed);
+                    break;
             }
             updateCameraView();
-            
+
         } );
         
         renderFunc( 0.0 );
