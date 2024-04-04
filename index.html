@@ -19,6 +19,9 @@
         Math.degrees = function(radians) {
             return radians * 180 / Math.PI;
         };
+
+        const LIGHT_INTENSITY_ADJUSTMENT = 0.1;
+        var textureURL = "texture.png";
     </script>
     <script id="shader-vs-light" type="x-shader/x-vertex">#version 300 es
         precision mediump float;
@@ -151,21 +154,10 @@
 
             vec3 result = (ambient + diffuse + specular) * objectColor * attenuation;
 
-            // Calcula la dirección de la linterna (cameraLight)
-            vec3 lightDirFlashlight = normalize(cameraLight.position - fragPos);
-            float theta = dot(lightDirFlashlight, normalize(-cameraLight.direction));
-
-            // Compara el ángulo de la linterna con el ángulo de corte para determinar si estamos dentro o fuera del cono de la linterna
-            if(theta > cameraLight.cutOff) {       
-                // Realiza los cálculos de iluminación
-                vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
-                FragColor = vec4(texColor * result, 1.0);
-            } else {  
-                // Usa la luz ambiente para que la escena no esté completamente oscura fuera del cono de la linterna
-                vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
-                //vec3 finalColor = diffuse * texColor; // con diff * texColor lo pone textura normal y oscuricido, con diffuse lo pone verde y oscurecido, siendo no verde la textura 
-                FragColor = vec4(texColor, 1.0) * vec4(result,1.0); //se multiplican el color de la textura por el resultado de las luces
-            }
+            // Texture
+            vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
+            //vec3 finalColor = diffuse * texColor; // con diff * texColor lo pone textura normal y oscuricido, con diffuse lo pone verde y oscurecido, siendo no verde la textura 
+            FragColor = vec4(texColor, 1.0) * vec4(result,1.0); //se multiplican el color de la textura por el resultado de las luces
         }
     </script>
 </head>
@@ -233,7 +225,7 @@
             gl.bindTexture(gl.TEXTURE_2D, null);
         }; 
         //Dirección de la textura
-        myTexture.src = "texture.png";
+        myTexture.src = textureURL;
 
         var uboBuffer = gl.createBuffer();
         gl.bindBuffer(gl.UNIFORM_BUFFER, uboBuffer);
@@ -289,10 +281,11 @@
             quadratic:0.032
         }; // Datos de la luz
 
+        const flashlightCutOffAngle = 12.5; // Ángulo de corte de la linterna en grados
         var flashlight = {
             position: cameraPosition,
             direction: cameraTarget,
-            cutOff: Math.cos(Math.radians(12.5)) // Calcular el coseno del ángulo de corte
+            cutOff: Math.cos(Math.radians(flashlightCutOffAngle)) // Calcular el coseno del ángulo de corte
         };
 
         function renderFunc(time) {
@@ -344,7 +337,6 @@
             shaderProgram.setUniform3f("flashlight.direction", flashlight.direction[0], flashlight.direction[1], flashlight.direction[2]);
             shaderProgram.setUniform1f("flashlight.cutOff", flashlight.cutOff);
 
-
             //shaderProgram.setUniform3f("lightPos", 10.0, 0.0, 1.0);
 
             gl.bufferSubData(
@@ -395,6 +387,11 @@
             vec3.normalize(cameraTarget,target);
             mat4.lookAt(view, cameraPosition, vec3.add(vec3.create(), cameraPosition, cameraTarget), cameraUp);
             shaderProgramL.setUniformMat4("view", view);
+        }
+
+        function updateFlashlight() {
+            flashlight.position = cameraPosition;
+            flashlight.direction = cameraTarget;
         }
 
         function updateLightSettings(adjustment){
@@ -512,15 +509,16 @@
                 
                 case 55: //7 mas intensidad
                     console.log(light.ambient);
-                    updateLightSettings(speed);
+                    updateLightSettings(LIGHT_INTENSITY_ADJUSTMENT);
 
                     break;
                 case 56: //7 menos intensidad
                     console.log(light.ambient);
-                    updateLightSettings(-speed);
+                    updateLightSettings(-LIGHT_INTENSITY_ADJUSTMENT);
                     break;
             }
             updateCameraView();
+            updateFlashlight();
 
         } );
         
