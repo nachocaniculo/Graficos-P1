@@ -98,6 +98,7 @@
         // Estructura para la luz direccional
         struct Light {
             vec3 direction;
+            vec3 color;
 
             vec3 ambient;
             vec3 diffuse;
@@ -122,14 +123,12 @@
 
         void main()
         {
-            vec3 lightColor = vec3(1.0, 1.0, 1.0);
-            vec3 lightColorOrbital = vec3(1.0, 1.0, 0.0); 
             vec3 objectColor = vec3(1.0, 0.0, 0.0);
             vec3 viewPos = vec3(0.0, 0.0, 20.0);
 
             // ambient
             float ambientStrength = 0.1;
-            vec3 ambient = light.ambient * (lightColor + lightColorOrbital) ;            
+            vec3 ambient = light.ambient * (light.color + orbitalLight.color) ;            
 
             // diffuse
             vec3 norm = normalize(Normal);
@@ -138,7 +137,7 @@
             vec3 lightDirCamera = normalize(cameraLight.direction); // Dirección de la luz direccional orbital
             float diff = max(dot(norm, lightDir), 0.0);
             float diffOrbital = max(dot(norm, lightDirOrbital), 0.0); //diff de la luz orbital
-            vec3 diffuse = (diff + diffOrbital) * (lightColor + lightColorOrbital); // se suman los diff y el color de las luces y ya se multiplican            
+            vec3 diffuse = (diff + diffOrbital) * (light.color + orbitalLight.color); // se suman los diff y el color de las luces y ya se multiplican            
 
             // specular
             float specularStrength = 0.5;
@@ -147,7 +146,7 @@
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
             vec3 reflectDirOrbital = reflect(-lightDirOrbital, norm);
             float specOrbital = pow(max(dot(viewDir, reflectDirOrbital), 0.0), 32.0);
-            vec3 specular = specularStrength * spec * specOrbital * (lightColor + lightColorOrbital); //se suman los spec de cada luz y tambien sus colores
+            vec3 specular = specularStrength * spec * specOrbital * (light.color + orbitalLight.color); //se suman los spec de cada luz y tambien sus colores
 
             //attenuation
             float distance    = length(light.direction - fragPos);
@@ -274,8 +273,10 @@
         var rotacionX = 0;
         var rotacionY = 0;
 
+
         var light = {
             direction: [10.0, 0.0, 0.0], // Dirección de la luz
+            color: [1.0, 1.0, 1.0],
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.5, 0.5, 0.5],
             specular: [1.0, 1.0, 1.0], 
@@ -351,6 +352,7 @@
             
             // Pasa los datos de la luz dinamica al shader
             shaderProgram.setUniform3f("orbitalLight.direction",lightX, lightY, -1);
+            shaderProgram.setUniform3f("orbitalLight.color", light.color[0], light.color[1], light.color[2]);
             // shaderProgram.setUniform3f("orbitalLight.ambient", orbitalLight.ambient[0], orbitalLight.ambient[1], orbitalLight.ambient[2]);
             // shaderProgram.setUniform3f("orbitalLight.diffuse", orbitalLight.diffuse[0], orbitalLight.diffuse[1], orbitalLight.diffuse[2]);
             // shaderProgram.setUniform3f("orbitalLight.specular", orbitalLight.specular[0], orbitalLight.specular[1], orbitalLight.specular[2]);
@@ -358,6 +360,7 @@
             
             // Pasa los datos de la luz al shader
             shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
+            shaderProgram.setUniform3f("light.color", light.color[0], light.color[1], light.color[2]);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
             shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
             shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
@@ -430,26 +433,6 @@
             flashlight.direction = cameraTarget;
         }
 
-        function updateLightSettings(adjustment){
-            // Ajusta la propiedad especificada por un valor
-            
-            console.log(light.ambient);
-
-            for (let i = 0; i < 3; i++) {
-                light.ambient[i] = Math.max(0.0, Math.min(light.ambient[i] + adjustment, 1.0));
-                // light.diffuse[i] = Math.max(0.0, Math.min(light.diffuse[i] + adjustment, 1.0));
-                // light.specular[i] = Math.max(0.0, Math.min(light.specular[i] + adjustment, 1.0));
-            }
-
-            // Actualiza los uniformes de luz en el programa de sombreado activo
-            shaderProgram.bind();
-            console.log(light.ambient);
-            shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
-            // shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
-            // shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
-            
-            
-        }
 
         document.addEventListener('keydown', function(event) {
             /*
@@ -471,6 +454,16 @@
                 39 => Fecha drcha
                 38 => Fecha arriba
                 40 => Fecha abajo
+
+                49 => 1
+                50 => 2
+                51 => 3
+                52 => 4 
+                53 => 5
+                54 => 6 
+                55 => 7
+                56 => 8
+            
 
             */
 
@@ -541,21 +534,40 @@
                 case 79: // O luz direccional atras
                     light.direction[2] -= speed;
                     break;
-
                 
-                case 55: //7 mas intensidad
-                    console.log(light.ambient);
-                    updateLightSettings(LIGHT_INTENSITY_ADJUSTMENT);
-
+                case 55: // 7 mas intensidad
+                    for (let i = 0; i < 3; i++) {
+                        light.ambient[i] = Math.max(0.0, Math.min(light.ambient[i] + adjustment, 1.0));
+                    }
                     break;
-                case 56: //8 menos intensidad
-                    console.log(light.ambient);
-                    updateLightSettings(-LIGHT_INTENSITY_ADJUSTMENT);
+                case 56: // 8 menos intensidad
+                    for (let i = 0; i < 3; i++) {
+                        light.ambient[i] = Math.max(0.0, Math.min(light.ambient[i] - adjustment, 1.0));
+                    }
+                    break;
+
+                case 49: // 1 mas color rojo
+                    light.color[0] += adjustment;
+                    break;
+                case 50: // 2 mas color verde
+                    light.color[1] += adjustment;
+                    break;
+                case 51: // 3 mas color azul
+                    light.color[2] += adjustment;
+                    break;
+
+                case 52: // 4 menos color rojo
+                    light.color[0] -= adjustment;
+                    break;
+                case 53: // 5 menos color verde
+                    light.color[1] -= adjustment;
+                    break;
+                case 54: // 6 menos color azul
+                    light.color[2] -= adjustment;
                     break;
             }
             updateCameraView();
             updateFlashlight();
-
         } );
         
         renderFunc( 0.0 );
