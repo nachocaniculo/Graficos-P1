@@ -122,8 +122,8 @@
 
         void main()
         {
-            vec3 lightColor = vec3(0.0, 1.0, 0.0);
-            vec3 lightColorOrbital = vec3(0.0, 0.0, 1.0); 
+            vec3 lightColor = vec3(1.0, 1.0, 1.0);
+            vec3 lightColorOrbital = vec3(1.0, 1.0, 1.0); 
             vec3 objectColor = vec3(1.0, 1.0, 1.0);
             vec3 viewPos = vec3(0.0, 0.0, 20.0);
 
@@ -157,8 +157,11 @@
 
             // Texture
             vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
-            //vec3 finalColor = diffuse * texColor; // con diff * texColor lo pone textura normal y oscuricido, con diffuse lo pone verde y oscurecido, siendo no verde la textura 
-            FragColor = vec4(texColor, 1.0) * vec4(result,1.0); //se multiplican el color de la textura por el resultado de las luces
+
+            vec3 finalColor = mix(result, texColor, 0.5); // Se mezcla el color de la textura con el resultado de la iluminación
+            
+            //Asignamos el color 
+            FragColor = vec4(finalColor, 1.0);
         }
     </script>
 </head>
