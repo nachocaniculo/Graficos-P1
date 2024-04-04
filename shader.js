@@ -123,3 +123,15 @@ ShaderProgram.prototype.autocatching = function( )
     }
     console.log( result );
 };
+ShaderProgram.prototype.clean = function() {
+    // Eliminar los shaders individuales
+    for (var i = 0; i < this.shaders.length; i++) {
+        gl.deleteShader(this.shaders[i]);
+    }
+    // Eliminar el programa de shader
+    gl.deleteProgram(this.mCompiledShader);
+    // Limpiar el arreglo de shaders
+    this.shaders = [];
+    // Limpiar los uniformLocations
+    this.uniformLocations = {};
+};

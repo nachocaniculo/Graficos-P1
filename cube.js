@@ -1,7 +1,7 @@
 var cubeNVertex = 24;
 var cubeNTriangleIndex = 12;
 
-const cubePositions = [
+var cubePositions = [
     [0.0, 0.0, 0.0],
     [4.0, 10.0, -30.0],
     [-3.0, -4.4, -5.0],
@@ -14,7 +14,7 @@ const cubePositions = [
     [-2.6, 2.0, -3.0],
 ];
 
-const cubeColors = [
+var cubeColors = [
     [1.0, 0.0, 0.0],  // Rojo
     [0.0, 1.0, 0.0],  // Verde
     [0.0, 0.0, 1.0],  // Azul
