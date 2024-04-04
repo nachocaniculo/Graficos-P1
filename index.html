@@ -123,13 +123,13 @@
         void main()
         {
             vec3 lightColor = vec3(1.0, 1.0, 1.0);
-            vec3 lightColorOrbital = vec3(1.0, 1.0, 1.0); 
-            vec3 objectColor = vec3(1.0, 1.0, 1.0);
+            vec3 lightColorOrbital = vec3(1.0, 1.0, 0.0); 
+            vec3 objectColor = vec3(1.0, 0.0, 0.0);
             vec3 viewPos = vec3(0.0, 0.0, 20.0);
 
             // ambient
             float ambientStrength = 0.1;
-            vec3 ambient = ambientStrength * (lightColor + lightColorOrbital) ;            
+            vec3 ambient = light.ambient * (lightColor + lightColorOrbital) ;            
 
             // diffuse
             vec3 norm = normalize(Normal);
@@ -153,15 +153,15 @@
             float distance    = length(light.direction - fragPos);
             float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance)); 
 
-            vec3 result = (ambient + diffuse + specular) * objectColor * attenuation;
+            vec3 result = (ambient + diffuse + specular) * attenuation;
 
             // Texture
             vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
 
-            vec3 finalColor = mix(result, texColor, 0.5); // Se mezcla el color de la textura con el resultado de la iluminación
+            //vec3 finalColor = mix(result, texColor, 0.5); // Se mezcla el color de la textura con el resultado de la iluminación
             
             //Asignamos el color 
-            FragColor = vec4(finalColor, 1.0);
+            FragColor = vec4(texColor, 1.0) * vec4(result,1.0);
         }
     </script>
 </head>
@@ -301,7 +301,7 @@
                 var model = mat4.create();
                 mat4.scale(model, model, [0.75, 0.75, 0.75]);
                 mat4.translate(model, model, position);
-                var angle = 20 * (i+1) * time;  // Ajusta el ángulo según sea necesario
+                var angle = 20 * (i+1) * time;  // Variable del angulo de rotacion
                 mat4.rotate(model, model, Math.radians(angle), [1.0, 0.3, 0.0]);
 
                 // Establece la matriz de modelo y el color para el shader del cubo
@@ -437,16 +437,16 @@
 
             for (let i = 0; i < 3; i++) {
                 light.ambient[i] = Math.max(0.0, Math.min(light.ambient[i] + adjustment, 1.0));
-                light.diffuse[i] = Math.max(0.0, Math.min(light.diffuse[i] + adjustment, 1.0));
-                light.specular[i] = Math.max(0.0, Math.min(light.specular[i] + adjustment, 1.0));
+                // light.diffuse[i] = Math.max(0.0, Math.min(light.diffuse[i] + adjustment, 1.0));
+                // light.specular[i] = Math.max(0.0, Math.min(light.specular[i] + adjustment, 1.0));
             }
 
             // Actualiza los uniformes de luz en el programa de sombreado activo
             shaderProgram.bind();
             console.log(light.ambient);
             shaderProgram.setUniform3f("light.ambient", light.ambient[0], light.ambient[1], light.ambient[2]);
-            shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
-            shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
+            // shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+            // shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
             
             
         }
@@ -479,27 +479,27 @@
             var speedRotation = 3;
             switch(event.keyCode) {
                 case 83: // S abajo
-                    cameraPosition[1] += speed; // Mover hacia abajo
+                    cameraPosition[1] -= speed; // Mover hacia abajo
                     break;
 
                 case 87: // W arriba
-                    cameraPosition[1] -= speed; // Mover hacia arriba
+                    cameraPosition[1] += speed; // Mover hacia arriba
                     break;
 
                 case 65: // A izquierda
                     var left = vec3.create();
                     vec3.cross(left, cameraTarget, cameraUp);
                     vec3.normalize(left, left);
-                    vec3.scaleAndAdd(cameraPosition, cameraPosition, left, speed);
-                    vec3.scaleAndAdd(cameraTarget, cameraTarget, left, speed);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, left, -speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, left, -speed);
                     break;
 
                 case 68: // D derecha
                     var right = vec3.create();
                     vec3.cross(right, cameraTarget, cameraUp);
                     vec3.normalize(right, right);
-                    vec3.scaleAndAdd(cameraPosition, cameraPosition, right, -speed);
-                    vec3.scaleAndAdd(cameraTarget, cameraTarget, right, -speed);
+                    vec3.scaleAndAdd(cameraPosition, cameraPosition, right, speed);
+                    vec3.scaleAndAdd(cameraTarget, cameraTarget, right, speed);
                     break;
 
                 case 81: // Q
@@ -510,16 +510,16 @@
                     break;
             
                 case 38: // flecha arriba rotacion arriba
-                    rotacionY -=speedRotation;
-                    break;
-                case 40: // flecha abajo rotacion abajo
                     rotacionY +=speedRotation;
                     break;
+                case 40: // flecha abajo rotacion abajo
+                    rotacionY -=speedRotation;
+                    break;
                 case 37: //flecha izquierda rotar izquierda
-                    rotacionX += speedRotation;                             
+                    rotacionX -= speedRotation;                             
                     break;
                 case 39: //flecha derecha rotar derecha
-                    rotacionX -= speedRotation;             
+                    rotacionX += speedRotation;             
                     break;
 
                 case 73:  // I luz direccional arriba
@@ -548,7 +548,7 @@
                     updateLightSettings(LIGHT_INTENSITY_ADJUSTMENT);
 
                     break;
-                case 56: //7 menos intensidad
+                case 56: //8 menos intensidad
                     console.log(light.ambient);
                     updateLightSettings(-LIGHT_INTENSITY_ADJUSTMENT);
                     break;
