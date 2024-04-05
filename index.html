@@ -23,7 +23,7 @@
         const LIGHT_INTENSITY_ADJUSTMENT = 0.1;
         var textureURL = "texture.png";
         // Variable para la posición de la cámara
-        var cameraPosition = [0.0, 0.0, 20.0]; // Posición inicial de la cámara
+        var cameraPosition = [0.0, 0.0, 20.0]; // Variable para la posición inicial de la cámara
         const flashlightCutOffAngle = 12.5; // Ángulo de corte de la linterna en grados
 
         // Variables para controlar la posición y orientación de la cámara
@@ -44,6 +44,8 @@
             linear:0.09,
             quadratic:0.032
         }; // Datos de la luz
+        
+        
 
         var cameraLight = {
             position: [0.0, 0.0, 20.0], // Dirección de la luz
@@ -151,12 +153,13 @@
 
         void main()
         {
+            vec3 lightColorOrbital = vec3(1.0, 1.0, 0.0); 
             vec3 objectColor = vec3(1.0, 0.0, 0.0);
             vec3 viewPos = cameraLight.position;
     
             // ambient
             float ambientStrength = 0.1;
-            vec3 ambient = light.ambient * (light.color + orbitalLight.color + cameraLight.color) ;            
+            vec3 ambient = light.ambient * (light.color + lightColorOrbital + cameraLight.color) ;            
     
             // diffuse
             vec3 norm = normalize(Normal);
@@ -166,7 +169,7 @@
             float diff = max(dot(norm, lightDir), 0.0);
             float diffOrbital = max(dot(norm, lightDirOrbital), 0.0); //diff de la luz orbital
             float diffCamera = max(dot(norm, lightDirCamera), 0.0); // Diff de la luz de la cámara
-            vec3 diffuse = (diff + diffOrbital + diffCamera) * (light.color + orbitalLight.color + cameraLight.color); // se suman los diff y el color de las luces y ya se multiplican            
+            vec3 diffuse = (diff + diffOrbital + diffCamera) * (light.color + lightColorOrbital + cameraLight.color); // se suman los diff y el color de las luces y ya se multiplican            
     
             // specular
             float specularStrength = 0.5;
@@ -177,7 +180,7 @@
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
             float specOrbital = pow(max(dot(viewDir, reflectDirOrbital), 0.0), 32.0);
             float specCamera = pow(max(dot(viewDir, reflectDirCamera), 0.0), 32.0);
-            vec3 specular = specularStrength * (spec + specOrbital + specCamera) * (light.color + orbitalLight.color + cameraLight.color); //se suman los spec de cada luz y tambien sus colores
+            vec3 specular = specularStrength * (spec + specOrbital + specCamera) * (light.color + lightColorOrbital + cameraLight.color); //se suman los spec de cada luz y tambien sus colores
     
             //attenuation
             float distance    = length(light.direction - fragPos);
@@ -317,7 +320,7 @@
                 mat4.scale(model, model, [0.75, 0.75, 0.75]);
                 mat4.translate(model, model, position);
                 var angle = 20 * (i+1) * time;  // Variable del angulo de rotacion
-                mat4.rotate(model, model, Math.radians(angle), [1.0, 0.3, 0.0]);
+                //mat4.rotate(model, model, Math.radians(angle), [1.0, 0.3, 0.0]);
 
                 // Establece la matriz de modelo y el color para el shader del cubo
                 shaderProgram.bind();
