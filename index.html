@@ -25,6 +25,32 @@
         // Variable para la posición de la cámara
         var cameraPosition = [0.0, 0.0, 20.0]; // Posición inicial de la cámara
         const flashlightCutOffAngle = 12.5; // Ángulo de corte de la linterna en grados
+
+        // Variables para controlar la posición y orientación de la cámara
+        var cameraPosition = [0.0, 0.0, 20.0];
+        var cameraTarget = [0.0, 0.0, 0.0];
+        var cameraUp = [0.0, 1.0, 0.0];
+        var rotacionX = 0;
+        var rotacionY = 0;
+
+        var light = {
+            direction: [10.0, 0.0, 0.0], // Dirección de la luz
+            color: [1.0, 1.0, 1.0],
+            ambient: [0.1, 0.1, 0.1],
+            diffuse: [0.5, 0.5, 0.5],
+            specular: [1.0, 1.0, 1.0], 
+
+            constant:1.0, 
+            linear:0.09,
+            quadratic:0.032
+        }; // Datos de la luz
+
+        var cameraLight = {
+            position: [0.0, 0.0, 20.0], // Dirección de la luz
+            color: [1.0, 1.0, 1.0],
+            cutOff: Math.cos(Math.radians(flashlightCutOffAngle))
+        }; // Datos de la luz de la cámara
+
     </script>
     <script id="shader-vs-light" type="x-shader/x-vertex">#version 300 es
         precision mediump float;
@@ -230,7 +256,6 @@
         var view = mat4.create();
         mat4.translate( view, view, [ 0.0, 0.0, -20.0 ] );
 
-
         // Carga de la textura
         var myTexture = new Image( );
         var textureID = gl.createTexture( );
@@ -282,37 +307,10 @@
         index = gl.getUniformBlockIndex(shaderProgramL.mCompiledShader, "UBO");
         gl.uniformBlockBinding(shaderProgramL.mCompiledShader, index, 0);
 
-        // Variables para controlar la posición y orientación de la cámara
-        var cameraPosition = [0.0, 0.0, 20.0];
-        var cameraTarget = [0.0, 0.0, 0.0];
-        var cameraUp = [0.0, 1.0, 0.0];
-        var rotacionX = 0;
-        var rotacionY = 0;
-
-
-        var light = {
-            direction: [10.0, 0.0, 0.0], // Dirección de la luz
-            color: [1.0, 1.0, 1.0],
-            ambient: [0.1, 0.1, 0.1],
-            diffuse: [0.5, 0.5, 0.5],
-            specular: [1.0, 1.0, 1.0], 
-
-            constant:1.0, 
-            linear:0.09,
-            quadratic:0.032
-        }; // Datos de la luz
-
-        var cameraLight = {
-            position: [0.0, 0.0, 20.0], // Dirección de la luz
-            color: [1.0, 1.0, 1.0],
-            cutOff: Math.cos(Math.radians(flashlightCutOffAngle))
-        }; // Datos de la luz de la cámara
-
         function renderCubes(time) {
             for (var i = 0; i < cubePositions.length; i++) {
                 var position = cubePositions[i];
                 var color = cubeColors[i];
-
 
                 // Crea la matriz de modelo para el cubo
                 var model = mat4.create();
@@ -363,8 +361,6 @@
             var lightRadius = 5;
             var lightX = Math.cos(time) * lightRadius;
             var lightY = Math.sin(time) * lightRadius;
-
-
             
             // Pasa los datos de la luz dinamica al shader
             shaderProgram.setUniform3f("orbitalLight.direction",lightX, lightY, -1);
@@ -380,9 +376,9 @@
             shaderProgram.setUniform3f("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
             shaderProgram.setUniform3f("light.specular", light.specular[0], light.specular[1], light.specular[2]);
 
-            shaderProgram.setUniform1f("light.constant", 1.0);
-            shaderProgram.setUniform1f("light.linear", 0.09);
-            shaderProgram.setUniform1f("light.quadratic", 0.032);
+            shaderProgram.setUniform1f("light.constant", light.constant);
+            shaderProgram.setUniform1f("light.linear", light.linear);
+            shaderProgram.setUniform1f("light.quadratic", light.quadratic);
             
             // Pasa los datos de la luz de la camara al shader
             shaderProgram.setUniform3f("cameraLight.position", cameraLight.position[0], cameraLight.position[1], cameraLight.position[2]);
