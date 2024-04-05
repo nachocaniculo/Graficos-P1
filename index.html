@@ -158,14 +158,25 @@
             float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance)); 
     
             vec3 result = (ambient + diffuse + specular) * attenuation;
+
+            float angle = dot(lightDirCamera, normalize(cameraLight.position - fragPos));
+
+            if (angle > cameraLight.cutOff) {
+                // Aplica iluminación al fragmento dentro del cono de luz
+                // Aquí puedes agregar cualquier cálculo adicional necesario
     
-            // Texture
-            vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
-    
-            //vec3 finalColor = mix(result, texColor, 0.5); // Se mezcla el color de la textura con el resultado de la iluminación
-            
-            //Asignamos el color 
-            FragColor = vec4(texColor, 1.0) * vec4(result,1.0);
+                // Texture
+                vec3 texColor = texture(diffuseTexture, TexCoord).rgb;
+        
+                //vec3 finalColor = mix(result, texColor, 0.5); // Se mezcla el color de la textura con el resultado de la iluminación
+                
+                //Asignamos el color 
+                FragColor = vec4(texColor, 1.0) * vec4(result,1.0);
+            } else {
+                // El fragmento está fuera del cono de luz, no se aplica iluminación
+                // Puedes optar por no hacer nada o modificar el color del fragmento según tu necesidad
+                result = vec3(0.0); // Por ejemplo, aquí se establece el color del fragmento como negro
+            }
         }
     </script>
 </head>
