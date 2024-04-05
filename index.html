@@ -149,38 +149,44 @@
     
         uniform Light light; // Uniforme para la luz direccional
         uniform Light orbitalLight; // Variable de la luz dinamica
-        uniform CameraLight cameraLight; // Variable de la luz dinamica
+        uniform Light orbitalLightXZ; // Variable de la luz dinamica
+        uniform CameraLight cameraLight; // Variable de la luz de la camara
 
         void main()
         {
             vec3 lightColorOrbital = vec3(1.0, 1.0, 0.0); 
+            vec3 lightColorOrbitalXZ = vec3(1.0, 0.0, 0.0); 
             vec3 objectColor = vec3(1.0, 0.0, 0.0);
             vec3 viewPos = cameraLight.position;
     
             // ambient
-            float ambientStrength = 0.1;
-            vec3 ambient = light.ambient * (light.color + lightColorOrbital + cameraLight.color) ;            
+            //float ambientStrength = 0.1;
+            vec3 ambient = light.ambient * (light.color + lightColorOrbital + cameraLight.color + lightColorOrbitalXZ) ;            
     
             // diffuse
             vec3 norm = normalize(Normal);
             vec3 lightDir = normalize(light.direction); // Dirección de la luz direccional
             vec3 lightDirOrbital = normalize(orbitalLight.direction); // Dirección de la luz direccional orbital
+            vec3 lightDirOrbitalXZ = normalize(orbitalLightXZ.direction); // Dirección de la luz direccional orbital
             vec3 lightDirCamera = normalize(cameraLight.position - fragPos); // Dirección de la luz de la cámara
             float diff = max(dot(norm, lightDir), 0.0);
             float diffOrbital = max(dot(norm, lightDirOrbital), 0.0); //diff de la luz orbital
+            float diffOrbitalXZ = max(dot(norm, lightDirOrbitalXZ), 0.0); //diff de la luz orbital
             float diffCamera = max(dot(norm, lightDirCamera), 0.0); // Diff de la luz de la cámara
-            vec3 diffuse = (diff + diffOrbital + diffCamera) * (light.color + lightColorOrbital + cameraLight.color); // se suman los diff y el color de las luces y ya se multiplican            
+            vec3 diffuse = (diff + diffOrbital + diffCamera + diffOrbitalXZ) * (light.color + lightColorOrbital + cameraLight.color + lightColorOrbitalXZ); // se suman los diff y el color de las luces y ya se multiplican            
     
             // specular
             float specularStrength = 0.5;
             vec3 viewDir = normalize(viewPos - fragPos);
             vec3 reflectDir = reflect(-lightDir, norm);
             vec3 reflectDirOrbital = reflect(-lightDirOrbital, norm);
+            vec3 reflectDirOrbitalXZ = reflect(-lightDirOrbitalXZ, norm);
             vec3 reflectDirCamera = reflect(-lightDirCamera, norm);
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
             float specOrbital = pow(max(dot(viewDir, reflectDirOrbital), 0.0), 32.0);
+            float specOrbitalXZ = pow(max(dot(viewDir, reflectDirOrbitalXZ), 0.0), 32.0);
             float specCamera = pow(max(dot(viewDir, reflectDirCamera), 0.0), 32.0);
-            vec3 specular = specularStrength * (spec + specOrbital + specCamera) * (light.color + lightColorOrbital + cameraLight.color); //se suman los spec de cada luz y tambien sus colores
+            vec3 specular = specularStrength * (spec + specOrbital + specCamera + specOrbitalXZ) * (light.color + lightColorOrbital + cameraLight.color + lightColorOrbitalXZ); //se suman los spec de cada luz y tambien sus colores
     
             //attenuation
             float distance    = length(light.direction - fragPos);
@@ -364,13 +370,21 @@
             var lightRadius = 5;
             var lightX = Math.cos(time) * lightRadius;
             var lightY = Math.sin(time) * lightRadius;
+
+            var lightX2 = Math.sin(time) * (lightRadius + 2);
+            var lightZ= Math.cos(time) * (lightRadius + 2);
+
             
             // Pasa los datos de la luz dinamica al shader
             shaderProgram.setUniform3f("orbitalLight.direction",lightX, lightY, -1);
-            shaderProgram.setUniform3f("orbitalLight.color", light.color[0], light.color[1], light.color[2]);
+            shaderProgram.setUniform3f("lightColorOrbital", light.color[0], light.color[1], light.color[2]);
             // shaderProgram.setUniform3f("orbitalLight.ambient", orbitalLight.ambient[0], orbitalLight.ambient[1], orbitalLight.ambient[2]);
             // shaderProgram.setUniform3f("orbitalLight.diffuse", orbitalLight.diffuse[0], orbitalLight.diffuse[1], orbitalLight.diffuse[2]);
             // shaderProgram.setUniform3f("orbitalLight.specular", orbitalLight.specular[0], orbitalLight.specular[1], orbitalLight.specular[2]);
+
+            // Pasa los datos de la segunda luz dinamica al shader
+            shaderProgram.setUniform3f("orbitalLightXZ.direction",lightX2, 0.0, lightZ);
+            shaderProgram.setUniform3f("lightColorOrbitalXZ", light.color[0], light.color[1], light.color[2]);
             
             // Pasa los datos de la luz al shader
             shaderProgram.setUniform3f("light.direction", light.direction[0], light.direction[1], light.direction[2]);
@@ -420,6 +434,14 @@
             //Modelado de la luz orbital
             var modelLight = mat4.create();
             mat4.translate(modelLight, modelLight, [lightX,lightY, 0.0]);
+            mat4.scale(modelLight, modelLight, [0.25, 0.25, 0.25]);
+
+            shaderProgramL.setUniformMat4("model", modelLight);
+            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);
+
+            //Modelado de la luz orbital 2
+            var modelLight = mat4.create();
+            mat4.translate(modelLight, modelLight, [lightX2, 0.0, lightZ]);
             mat4.scale(modelLight, modelLight, [0.25, 0.25, 0.25]);
 
             shaderProgramL.setUniformMat4("model", modelLight);
